@@ -1,9 +1,15 @@
 const express = require('express');
-const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { postPetRequest, approveRequest, deletePost, allPets } = require('../Controller/PetController');
+const fs = require('fs');
 
+// Create an Express router
+const router = express.Router();
+
+// Mongoose model
+const Pet = require('../Model/PetModel');
+
+// Multer storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, '../images'));
@@ -13,13 +19,88 @@ const storage = multer.diskStorage({
   }
 });
 
+// Multer upload configuration
 const upload = multer({ storage: storage });
 
-router.get('/requests', (req, res) => allPets('Pending', req, res));
-router.get('/approvedPets', (req, res) => allPets('Approved', req, res));
-router.get('/adoptedPets', (req, res) => allPets('Adopted', req, res));
+// Controller functions
+const postPetRequest = async (req, res) => {
+    try {
+        const { name, age, area, justification, email, phone, type } = req.body;
+        const { filename } = req.file;
+
+        const pet = await Pet.create({
+            name,
+            age,
+            area,
+            justification,
+            email,
+            phone,
+            type,
+            filename,
+            status: 'Pending'
+        });
+
+        res.status(200).json(pet);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const approveRequest = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { email, phone, status } = req.body;
+        const pet = await Pet.findByIdAndUpdate(id, { email, phone, status }, { new: true });
+
+        if (!pet) {
+            return res.status(404).json({ error: 'Pet not found' });
+        }
+
+        res.status(200).json(pet);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const allPets = async (req, res) => {
+    const reqStatus = req.params.status; // Get status from request parameters
+    try {
+        const data = await Pet.find({ status: reqStatus }).sort({ updatedAt: -1 });
+        if (data.length > 0) {
+            res.status(200).json(data);
+        } else {
+            res.status(404).json({ error: 'No data found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const deletePost = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const pet = await Pet.findByIdAndDelete(id);
+        if (!pet) {
+            return res.status(404).json({ error: 'Pet not found' });
+        }
+        const filePath = path.join(__dirname, '../images', pet.filename);
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        res.status(200).json({ message: 'Pet deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Define routes
+router.get('/requests', (req, res) => allPets({ params: { status: 'Pending' } }, res));
+router.get('/approvedPets', (req, res) => allPets({ params: { status: 'Approved' } }, res));
+router.get('/adoptedPets', (req, res) => allPets({ params: { status: 'Adopted' } }, res));
 router.post('/services', upload.single('picture'), postPetRequest);
 router.put('/approving/:id', approveRequest);
 router.delete('/delete/:id', deletePost);
 
+// Export the router
 module.exports = router;
