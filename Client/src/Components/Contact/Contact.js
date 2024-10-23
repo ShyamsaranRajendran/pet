@@ -7,7 +7,7 @@ const Contact = () => {
       <div className="contactUs-left-para">
         <h3>Let's get in touch</h3>
         <i class="fa fa-envelope"></i>
-        <a class="mail-links" href="mailto:kashifkzmi5@gmail.com">
+        <a class="mail-links" href="mailto:shyam@gmail.com">
           petzen5@gmail.com
         </a>
 

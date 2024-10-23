@@ -1553,3 +1553,10 @@ body {
     margin-right: 4px;
     transition: all 0.3s ease;
 }
+.nav-par{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}

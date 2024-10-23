@@ -27,11 +27,18 @@ const Navbar = (props) => {
           </li>
         </ul>
       </div>
+     <div className="nav-par">
+       <div>
+        <Link to="/services">
+          <button className="Navbar-button">Log in</button>
+        </Link>
+      </div>
       <div>
         <Link to="/services">
           <button className="Navbar-button">Give a Pet</button>
         </Link>
       </div>
+     </div>
     </div>
   );
 };
